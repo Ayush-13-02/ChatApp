@@ -1,29 +1,77 @@
-import { collection, doc, getDocs, query, where } from 'firebase/firestore';
-import React, { useState } from 'react'
+import { collection, doc, getDoc, getDocs, query, serverTimestamp, setDoc, updateDoc, where } from 'firebase/firestore';
+import React, { useState, useEffect, useContext } from 'react'
+import { AuthContext } from '../Context/AuthContext';
+import { ChatContext } from '../Context/ChatContext';
 import { db } from '../Firebase';
 
 function Search({ setContact }) {
     const [search, setSearch] = useState("");
-    const [user, setUser] = useState(null);
+    // const [user, setUser] = useState(null);
+    const [allUsers, setAllUsers] = useState([]);
+    const [searchdata, setSearchdata] = useState([]);
     const [err, setErr] = useState(false)
-    const HandleSearch = async () => {
-        console.log("Hello")
-        const q = query(
-            collection(db, "users"),
-            where("displayName", "==", search));
+    const { currentuser } = useContext(AuthContext);
+    const { dispatch } = useContext(ChatContext);
+    const HandleSearch = async (e) => {
+        setSearch(e.target.value);
+        var Search = e.target.value;
+
         try {
-            const querySnapshot = await getDocs(q);
+            const querySnapshot = await getDocs(collection(db, "users"));
+            var list = [];
             querySnapshot.forEach((doc) => {
-                setUser(doc.data());
-            })
+                list.push(doc.data());
+            });
+            setAllUsers(list)
         } catch (err) {
             setErr(true)
         }
-        console.log(user, search)
+
+        var data = allUsers.filter(function (Userdata) {
+            return Userdata.displayName.includes(Search);
+        });
+        setSearchdata(data);
     }
-    const HandleKey = (e) => {
-        console.log("Hi");
-        e.code === "Enter" && HandleSearch();
+
+    const HandleSelect = async (user) => {
+        //setUser(item)
+        console.log("HandleSelect");
+        const combinedId =
+            currentuser.uid > user.uid ?
+                (currentuser.uid + user.uid) :
+                (user.uid + currentuser.uid);
+        try {
+            const res = await getDoc(doc(db, "chats", combinedId));
+            dispatch({ type: "CHANGE_USER", payload: user });
+
+            if (!res.exists()) {
+                // create a chat in chats collection
+                await setDoc(doc(db, "chats", combinedId), { messages: [] });
+                // update userchats
+                // await updateDoc(doc(db, "userChats", currentuser.uid), {
+                //     [combinedId + ".userInfo"]: {
+                //         uid: user.uid,
+                //         displayName: user.displayName,
+                //         photoURL: user.photoURL
+                //     },
+                //     [combinedId + ".date"]: serverTimestamp()
+                // });
+
+                // await updateDoc(doc(db, "userChats", user.uid), {
+                //     [combinedId + ".userInfo"]: {
+                //         uid: currentuser.uid,
+                //         displayName: currentuser.displayName,
+                //         photoURL: currentuser.photoURL
+                //     },
+                //     [combinedId + ".date"]: serverTimestamp()
+                // })
+            }
+
+        } catch (err) {
+            setErr(true);
+            console.log("Uff! Error")
+        }
+        setContact(false)
     }
     return (
         <div>
@@ -36,20 +84,26 @@ function Search({ setContact }) {
                 </div>
             </div>
             <div className='border-b-2 border-blue-500 mx-1'>
-                <input type="text" name="userimg" id="userimg" onKeyDown={HandleKey} onChange={(e) => setSearch(e.target.value)} value={search} className="text-sm rounded block w-full p-2.5 bg-[#12172d] text-white placeholder-blue-800 font-medium outline-none" placeholder="Search User" required="" />
+                <input type="text" name="userimg" id="userimg" onChange={(e) => HandleSearch(e)} value={search} className="text-sm rounded block w-full p-2.5 bg-[#12172d] text-white placeholder-blue-800 font-medium outline-none" placeholder="Search User" required="" />
             </div>
 
             <div className='my-4'>
-                {user&&<div className='flex items-center m-2 p-2 rounded cursor-pointer bg-blue-700'>
-                    <div className='w-12 h-12 rounded-full border border-blue-500'>
-                        <img className='flex flex-shrink-0 object-cover object-center w-12 h-12 rounded-full' src={user.photoURL} />
-                    </div>
+                {
+                    searchdata.map((item) => {
+                        return (
+                            <div key={item.uid} className='flex items-center m-2 p-2 rounded cursor-pointer shadow-sm shadow-[#060415] hover:scale-[1.02] active:scale-100' onClick={() => { HandleSelect(item); }}>
+                                <div className='w-12 h-12 rounded-full border border-blue-500'>
+                                    <img className='flex flex-shrink-0 object-cover object-center w-12 h-12 rounded-full' src={item.photoURL} />
+                                </div>
 
-                    <div className='flex flex-col mx-2'>
-                        <span className='font-bold'>{user.displayName}</span>
-                        <span className='text-sm'>Last Messae in Chatbox</span>
-                    </div>
-                </div>}
+                                <div className='flex flex-col mx-2'>
+                                    <span className='font-bold'>{item.displayName}</span>
+                                    <span className='text-sm'>Last Messae in Chatbox</span>
+                                </div>
+                            </div>
+                        )
+                    })
+                }
             </div>
         </div>
     )

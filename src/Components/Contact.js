@@ -11,7 +11,7 @@ function Contact() {
                         <span className='px-2 text-sm font-medium'>12:00 am</span>
                     </div>
                 </div>
-                <button title='Add new Contact' onClick={() => setContact(true)} className='cursor-pointer active:scale-[0.95]'><i class="fa-solid fa-plus"></i></button>
+                <button title='Add new Contact' onClick={() => setContact(true)} className='cursor-pointer active:scale-[0.95]'><i className="fa-solid fa-plus"></i></button>
                 <button title='Logout' onClick={() => signOut(auth)} className='cursor-pointer active:scale-[0.95]'><i className="fa-solid fa-arrow-right-from-bracket"></i></button>
             </div>
             <div>

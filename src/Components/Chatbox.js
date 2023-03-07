@@ -1,5 +1,5 @@
 import { doc, onSnapshot } from 'firebase/firestore'
-import React, { useContext, useEffect, useState } from 'react'
+import React, { useContext, useEffect, useRef, useState } from 'react'
 import { AuthContext } from '../Context/AuthContext'
 import { ChatContext } from '../Context/ChatContext'
 import { db } from '../Firebase'
@@ -8,10 +8,15 @@ function Chatbox() {
     const { data } = useContext(ChatContext)
     const { currentuser } = useContext(AuthContext)
     const [chat, setChat] = useState([])
+    const ref = useRef();
+
+  
     useEffect(() => {
         const unsub = onSnapshot(doc(db, "chats", data.chatID), (doc) => {
             doc.exists && setChat(doc.data().messages)
-        })
+        });
+        ref.current?.scrollIntoView({ behavior: "smooth" });
+        console.log("Scroll")
         return (() => unsub())
     }, [data.chatID])
     
@@ -20,7 +25,7 @@ function Chatbox() {
             {
                 chat.map((item) => {
                     return (
-                        <div key={item.id} className='mx-4'>
+                        <div ref={ref} key={item.id} className='mx-4'>
                             {
                                 item.senderId === currentuser.uid ?
                                     <div className='flex w-full justify-end'>
@@ -29,9 +34,9 @@ function Chatbox() {
                                                 <div className="flex justify-end w-full max-w-[80%] sm:max-w-[70%] md:max-w-[50%] m-2">
                                                     <div className="relative flex flex-col min-w-0 break-words bg-blue-300 border-0 shadow-xl rounded-md bg-clip-border p-1 max-w-max">
                                                         <div className="relative shadow-inner bg-black">
-                                                            <a className="block shadow-inner overflow-hidden opacity-70">
+                                                            <span className="block shadow-inner overflow-hidden opacity-70">
                                                                 <img src={item.img} alt="img-blur-shadow" className="" />
-                                                            </a>
+                                                            </span>
                                                         </div>
                                                         <div className='flex flex-col mr-1 px-2 pt-1 text-sm shadow shadow-blue-300'>
                                                             <span>{item.text}</span>
@@ -59,9 +64,9 @@ function Chatbox() {
                                                 <div className="flex justify-start w-full max-w-[80%] sm:max-w-[70%] md:max-w-[50%] m-2">
                                                     <div className="relative flex flex-col min-w-0 break-words border-0 shadow-xl rounded-md bg-clip-border bg-white p-1 max-w-max">
                                                         <div className="relative shadow-inner bg-black">
-                                                            <a className="block shadow-inner overflow-hidden opacity-70">
+                                                            <span className="block shadow-inner overflow-hidden opacity-70">
                                                                 <img src={item.img} alt="img-blur-shadow" className="" />
-                                                            </a>
+                                                            </span>
                                                         </div>
                                                         <div className='flex flex-col mr-1 px-2 pt-1 text-sm'>
                                                             <span>{item.text}</span>
